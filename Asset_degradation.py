@@ -302,6 +302,8 @@ def simulate_maintenance_policy(lt_failure_mode, st_failure_mode, shock_threshol
     #Return the expected unitary cost for the studied failure modes
     return results_index, st_expected_maintenance_cost_per_unit_of_time, lt_expected_maintenance_cost_per_unit_of_time
 
+#é preciso apagar a lista da degradação após cada simulação da degradação!!!!!!!!!
+
 #Test functions
 short_term = Failure_mode_degradation(10, 100, 2, 4, [], 100, 50, 200)
 long_term = Failure_mode_degradation(0, 200, 0.1, 2, [], 200, 200, 1000)
