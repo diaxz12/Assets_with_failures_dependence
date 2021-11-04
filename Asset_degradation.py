@@ -2,7 +2,7 @@
 ###Funções dedicadas à degradação dos ativos     ###
 ####################################################
 
-#Generic libraries
+#Required libraries
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
