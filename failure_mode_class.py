@@ -31,8 +31,30 @@ class Failure_mode_degradation:
         self.preventive_maintenance_costs = preventive_maintenance_costs
         self.corrective_maintenance_costs = corrective_maintenance_costs
 
-    #Function to clear the simulated degradatin
+    #Function to clear the simulated degradation
     def clear_degradation(self):
 
         #delete the simulated degradation
         self.degradation = list()
+
+    #Function to compute the failure mode MTBF depending on the selected process
+    #Parameters:
+    #degradation_process - We have to compute the mtbf according to degradation process: Gamma process or Wienner process
+    def compute_mtbf(self, degradation_process):
+
+        #Compute the mtbf based on a gamma process
+        if degradation_process == 'gamma':
+            #1-First we compute the birnbaum-saunders (bs) alpha parameter given the long-term gamma process
+            bs_alpha = 1/((self.failure_threshold-self.initial_condition)/self.average_degradation_parameter)**0.5 #manual square root (i am trying to avoid importing libraries for this class)
+            bs_beta = ((self.failure_threshold-self.initial_condition)/self.average_degradation_parameter)/self.variability_degradation_parameter
+
+            #2-Then we compute the long-term failure mode MTBF
+            return bs_beta*(1+bs_alpha**2/2)
+
+        #Compute the mtbf based on a wienner process
+        if degradation_process == 'wienner':
+            return (self.failure_threshold-self.initial_condition)/self.average_degradation_parameter
+
+        #This value implies that none of a method was correctly selected
+        print("Choose either 'wienner' or 'gamma' to get a mtbf result.")
+        return -1

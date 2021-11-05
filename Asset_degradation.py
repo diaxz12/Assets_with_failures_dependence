@@ -6,7 +6,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits import mplot3d
+#from mpl_toolkits import mplot3d
 from failure_mode_class import Failure_mode_degradation
 
 #Failure mode degradation that leads to the asset failure and consequent replacement using a gamma process
@@ -241,12 +241,16 @@ def maintenance_costs(failure_mode, maintenance_policy):
     #Get the maintenance interventions
     failure_mode_maintenance = maintenance_interventions(failure_mode.degradation, failure_mode.initial_condition, failure_mode.failure_threshold)
 
+    #variable for the total cost (starts with 0)
+    total_maintenance_costs = 0
+
     #Compute costs for the corrective maintenance costs
-    if len(failure_mode_maintenance) > 0:
-        total_maintenance_costs = (failure_mode_maintenance.count('C') * failure_mode.corrective_maintenance_costs) / len(failure_mode_maintenance) + \
-                                  (failure_mode_maintenance.count('P') * failure_mode.preventive_maintenance_costs) / len(failure_mode_maintenance)
-    else:
-        total_maintenance_costs = (failure_mode_maintenance.count('P') * failure_mode.preventive_maintenance_costs) / len(failure_mode_maintenance)
+    if failure_mode_maintenance.count('C') > 0:
+        total_maintenance_costs += (failure_mode_maintenance.count('C') * failure_mode.corrective_maintenance_costs) / (len(failure_mode_maintenance)+1) #in the case of having a zero
+
+    #Compute costs for the preventive maintenance costs
+    if failure_mode_maintenance.count('P') > 0:
+        total_maintenance_costs += (failure_mode_maintenance.count('P') * failure_mode.preventive_maintenance_costs) / (len(failure_mode_maintenance)+1) #in the case of having a zero
 
     return round(total_maintenance_costs, 2)
 
@@ -358,7 +362,7 @@ def simulate_maintenance_policy(lt_failure_mode, st_failure_mode, shock_threshol
         lt_lifetime_without_maintenance = int(expected_lifetime(lt_failure_mode.degradation, lt_failure_mode.initial_condition))
 
         #Reset the degradation to start simulating the TBM
-        st_failure_mode.degradation, lt_failure_mode.degradation = list(), list()
+        st_failure_mode.clear_degradation(), lt_failure_mode.clear_degradation()
 
         #Simulate for different combinations of condition thresholds
         for lt_tbm in range(1, lt_lifetime_without_maintenance+1, policy_step):
@@ -435,6 +439,37 @@ def plot_cbm_maintenance_costs(cbm_data, angle_view = 0):
     #Plot the 3d plot
     ax.plot_trisurf(x_values, y_values, z_values, cmap='viridis', linewidth=0.5)
 
+
+#Function to simulate a given maintenance policy
+#lt_failure_mode - Long term failure mode object that is used for the degradation process
+#st_failure_mode - Short term failure mode object that is used for the degradation process
+#shock_threshold - Shock threshold
+#shock_lameda - Poisson arrival rate for the shock process
+#shock_mean - Normal distribution mean parameter
+#shock_stdev - Normal distribution standard deviation parameter
+#number_periods - Number of time periods that are used for the simulation
+#maintenance_policy - Compute the costs according to the defined maintenance policy (CM - corrective maintenance, PM - perfect maintenance, TBM - time based maintenance, ICBM - with perfect inspection, CBM - with perfect continuous monitoring, EICBM - with imperfect inspection, ECBM - with imperfect continuous monitoring)
+#policy_iteration_limit - Limit to where we can iteratively study the respective maintenance policy
+#policy_step - Number of times that we want to make a step (by default it takes the unit value)
+def optimal_maintenance_policy_cost(lt_failure_mode, st_failure_mode, shock_threshold, shock_lameda, shock_mean, shock_stdev, number_periods, maintenance_policy, policy_iteration_limit, policy_step=1):
+
+    #Simulate the specified maintenance policy
+    results = simulate_maintenance_policy(lt_failure_mode, st_failure_mode, shock_threshold, shock_lameda, shock_mean, shock_stdev, number_periods, maintenance_policy, policy_iteration_limit, policy_step)
+
+    #Convert the results to a specific format
+    results['total_expected_unitary_cost'] = results['st_expected_maintenance_cost_per_unit_of_time'] + results['lt_expected_maintenance_cost_per_unit_of_time']
+    condition_policy, total_expected_maintenance_cost_per_unit_of_time = list(results['policy']), list(results['total_expected_unitary_cost'])
+
+    #Compute optimal decisions
+    optimal_decision = condition_policy[total_expected_maintenance_cost_per_unit_of_time.index(min(total_expected_maintenance_cost_per_unit_of_time))]
+
+    #Compute maintenance costs
+    cost = round(min(total_expected_maintenance_cost_per_unit_of_time), 2)
+
+    return optimal_decision, cost, results
+
+
+
 #Test functions
 inspection_period = 25
 inspection_costs = 10
@@ -446,12 +481,12 @@ shock_intensity_mean = 7 #normal distribution
 shock_intensity_stdev = 2 #normal distribution
 simulating_periods = 10000
 
-results = simulate_maintenance_policy(long_term, short_term, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, 'TBM', 200, 5)
+#results = simulate_maintenance_policy(long_term, short_term, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, 'TBM', 200, 5)
 
-plot_cbm_maintenance_costs(results, 20)
+#plot_cbm_maintenance_costs(results, 20)
 
-results['st_tbm'] = [short_term_tbm.split("/")[1] for short_term_tbm in results['policy']]
-results['total_costs'] = results['st_expected_maintenance_cost_per_unit_of_time'] + results['lt_expected_maintenance_cost_per_unit_of_time']
-grouped_results = results.groupby('policy').min('total_costs')
+#results['st_tbm'] = [short_term_tbm.split("/")[1] for short_term_tbm in results['policy']]
+#results['total_costs'] = results['st_expected_maintenance_cost_per_unit_of_time'] + results['lt_expected_maintenance_cost_per_unit_of_time']
+#grouped_results = results.groupby('policy').min('total_costs')
 
 #policy_costs_plot(st_expected_maintenance_cost_per_unit_of_time, lt_expected_maintenance_cost_per_unit_of_time, 200, 1, "Time (t)", 50)
