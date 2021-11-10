@@ -17,7 +17,7 @@ class Failure_mode_degradation:
     #inspection_costs - inspection costs given the condition assessment
     #preventive_maintenance_costs - planned maintenance intervention costs
     #corrective_maintenance_costs - corrective maintenance intervention costs
-    def __init__(self, initial_condition, failure_threshold, average_degradation_parameter, variability_degradation_parameter, degradation, inspection, time_maintenance_threshold,condition_maintenance_threshold, inspection_costs, preventive_maintenance_costs, corrective_maintenance_costs):
+    def __init__(self, initial_condition, failure_threshold, average_degradation_parameter, variability_degradation_parameter, degradation, inspection, time_maintenance_threshold,condition_maintenance_threshold, inspection_costs, sensor_costs, preventive_maintenance_costs, corrective_maintenance_costs):
 
         self.initial_condition = initial_condition
         self.failure_threshold = failure_threshold
@@ -28,6 +28,7 @@ class Failure_mode_degradation:
         self.time_maintenance_threshold = time_maintenance_threshold
         self.condition_maintenance_threshold = condition_maintenance_threshold
         self.inspection_costs = inspection_costs
+        self.sensor_costs = sensor_costs
         self.preventive_maintenance_costs = preventive_maintenance_costs
         self.corrective_maintenance_costs = corrective_maintenance_costs
 

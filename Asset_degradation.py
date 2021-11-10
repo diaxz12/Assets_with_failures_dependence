@@ -390,8 +390,8 @@ def simulate_maintenance_policy(lt_failure_mode, st_failure_mode, shock_threshol
 
                 #Compute the expected unitary cost for each failure mode
                 results_index.append(f'{lt_cbm}/{st_cbm}')
-                st_expected_maintenance_cost_per_unit_of_time.append(maintenance_costs(st_failure_mode, maintenance_policy) / expected_lifetime(st_failure_mode.degradation, st_failure_mode.initial_condition))
-                lt_expected_maintenance_cost_per_unit_of_time.append(maintenance_costs(lt_failure_mode, maintenance_policy) / expected_lifetime(lt_failure_mode.degradation, lt_failure_mode.initial_condition))
+                st_expected_maintenance_cost_per_unit_of_time.append((maintenance_costs(st_failure_mode, maintenance_policy)+st_failure_mode.sensor_costs) / expected_lifetime(st_failure_mode.degradation, st_failure_mode.initial_condition))
+                lt_expected_maintenance_cost_per_unit_of_time.append((maintenance_costs(lt_failure_mode, maintenance_policy)+lt_failure_mode.sensor_costs) / expected_lifetime(lt_failure_mode.degradation, lt_failure_mode.initial_condition))
 
     #Compute cost for the continuous based maintenance with perfect inspection
     if maintenance_policy == 'ICBM':
@@ -473,8 +473,9 @@ def optimal_maintenance_policy_cost(lt_failure_mode, st_failure_mode, shock_thre
 #Test functions
 inspection_period = 25
 inspection_costs = 10
-short_term = Failure_mode_degradation(10, 100, 2, 4, [], inspection_period, 100, 100, inspection_costs, 50, 200)
-long_term = Failure_mode_degradation(0, 200, 0.1, 2, [], inspection_period, 200, 200, inspection_costs, 200, 1000)
+sensor_costs = 100
+short_term = Failure_mode_degradation(10, 100, 2, 4, [], inspection_period, 100, 100, inspection_costs, sensor_costs, 50, 200)
+long_term = Failure_mode_degradation(0, 200, 0.1, 2, [], inspection_period, 200, 200, inspection_costs, sensor_costs, 200, 1000)
 shock_threshold = 50
 lameda_shocks = 0.5 #shocks per time step
 shock_intensity_mean = 7 #normal distribution
