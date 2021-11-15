@@ -128,10 +128,10 @@ def simulate_degradation_with_maintenance(lt_failure_mode, st_failure_mode, shoc
 
         #Check condition based maintenance policy wit inspection (I made flexible enough to incorporate different inspection periods if we wanted to)
         #Then we verify if we can perfom the inspection
-        if maintenance_policy == 'ICBM' and st_inspection_period % st_failure_mode.inspection == 0:
+        if maintenance_policy == 'ICBM' and st_inspection_period % st_failure_mode.inspection == 0 and maintenance_policy != 'TBM':
             st_number_inspections[len(st_number_inspections)-1] += 1
             st_condition = st_failure_mode.initial_condition if ((st_condition > st_failure_mode.condition_maintenance_threshold) or (lt_condition > lt_failure_mode.condition_maintenance_threshold)) else st_condition
-        if maintenance_policy == 'ICBM' and lt_inspection_period % lt_failure_mode.inspection == 0:
+        if maintenance_policy == 'ICBM' and lt_inspection_period % lt_failure_mode.inspection == 0 and maintenance_policy != 'TBM':
             lt_number_inspections[len(lt_number_inspections)-1] += 1
             lt_condition = lt_failure_mode.initial_condition if lt_condition > lt_failure_mode.condition_maintenance_threshold else lt_condition
 
@@ -390,8 +390,8 @@ def simulate_maintenance_policy(lt_failure_mode, st_failure_mode, shock_threshol
 
                 #Compute the expected unitary cost for each failure mode
                 results_index.append(f'{lt_cbm}/{st_cbm}')
-                st_expected_maintenance_cost_per_unit_of_time.append((maintenance_costs(st_failure_mode, maintenance_policy)+st_failure_mode.sensor_costs) / expected_lifetime(st_failure_mode.degradation, st_failure_mode.initial_condition))
-                lt_expected_maintenance_cost_per_unit_of_time.append((maintenance_costs(lt_failure_mode, maintenance_policy)+lt_failure_mode.sensor_costs) / expected_lifetime(lt_failure_mode.degradation, lt_failure_mode.initial_condition))
+                st_expected_maintenance_cost_per_unit_of_time.append((maintenance_costs(st_failure_mode, maintenance_policy) + st_failure_mode.sensor_costs) / expected_lifetime(st_failure_mode.degradation, st_failure_mode.initial_condition))
+                lt_expected_maintenance_cost_per_unit_of_time.append((maintenance_costs(lt_failure_mode, maintenance_policy) + lt_failure_mode.sensor_costs) / expected_lifetime(lt_failure_mode.degradation, lt_failure_mode.initial_condition))
 
     #Compute cost for the continuous based maintenance with perfect inspection
     if maintenance_policy == 'ICBM':
