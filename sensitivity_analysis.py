@@ -18,13 +18,13 @@ from Asset_degradation import *
 #maintenance_policy_list - Compute the costs according to the defined maintenance policy list (CM - corrective maintenance, PM - perfect maintenance, TBM - time based maintenance, ICBM - with perfect inspection, CBM - with perfect continuous monitoring, EICBM - with imperfect inspection, ECBM - with imperfect continuous monitoring)
 #policy_iteration_limit - Limit to where we can iteratively study the respective maintenance policy
 #policy_step - Number of times that we want to make a step (by default it takes the unit value)
+#ratio_limit - Defines the ratio maximum value that is going to be used for the study
 #sensitivity_step - The iterative step that we want when going through the interval
-def failure_modes_mtbf_ratio(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy_list, policy_limit, policy_step, sensitivity_step):
+def failure_modes_mtbf_ratio(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy_list, policy_limit, policy_step, ratio_limit, sensitivity_step):
 
     #define the mtbf ratio that we want to study
-    upper_limmit = 100 #define value scale dado que o range não aceia floats
-    ratio_interval = [ratio for ratio in range(1,upper_limmit,int(sensitivity_step*upper_limmit))]
-    ratio_interval.append(upper_limmit) #garantuee that we add the maximum allowed value for the ratio
+    ratio_interval = [ratio for ratio in range(1,ratio_limit,sensitivity_step)]
+    ratio_interval.append(ratio_limit) #garantuee that we add the maximum allowed value for the ratio
 
     #Compute the new drift parameter (wienner process for the short-term) given the specified values of the ratio and predefined parameters
     lt_mtbf = lt_failure_mode.compute_mtbf('gamma')
@@ -33,7 +33,7 @@ def failure_modes_mtbf_ratio(lt_failure_mode, st_failure_mode, shock_threshold, 
     agregated_results = pd.DataFrame({"mtbf_ratio": ratio_interval})
 
     #scale the ratio values
-    agregated_results['mtbf_ratio'] = agregated_results['mtbf_ratio'] / upper_limmit
+    agregated_results['mtbf_ratio'] = agregated_results['mtbf_ratio']
 
     #analyze the process for each maintenance policy that we have available
     for maintenance_policy in maintenance_policy_list:
@@ -47,7 +47,7 @@ def failure_modes_mtbf_ratio(lt_failure_mode, st_failure_mode, shock_threshold, 
             print(f'{maintenance_policy} - The mtbf ratio value between the short-term and long-term failure is R={ratio}')
 
             #Calcular o drift que precisamos dado o rácio e mantendo o resto da informação (temos que ajustar o ratio para a escala real)
-            st_failure_mode.average_degradation_parameter = (st_failure_mode.failure_threshold-st_failure_mode.initial_condition)/(ratio * lt_mtbf)
+            st_failure_mode.average_degradation_parameter = (st_failure_mode.failure_threshold-st_failure_mode.initial_condition) * ratio / lt_mtbf
 
             #Simular a política de manutenção pretendida e guardar o melhor resultado
             cost = scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
@@ -73,19 +73,19 @@ def failure_modes_mtbf_ratio(lt_failure_mode, st_failure_mode, shock_threshold, 
 #maintenance_policy_list - Compute the costs according to the defined maintenance policy list (CM - corrective maintenance, PM - perfect maintenance, TBM - time based maintenance, ICBM - with perfect inspection, CBM - with perfect continuous monitoring, EICBM - with imperfect inspection, ECBM - with imperfect continuous monitoring)
 #policy_iteration_limit - Limit to where we can iteratively study the respective maintenance policy
 #policy_step - Number of times that we want to make a step (by default it takes the unit value)
+#ratio_limit - Defines the ratio maximum value that is going to be used for the study
 #sensitivity_step - The iterative step that we want when going through the interval
-def failure_modes_shock_ratio(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy_list, policy_limit, policy_step, sensitivity_step):
+def failure_modes_shock_ratio(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy_list, policy_limit, policy_step, ratio_limit, sensitivity_step):
 
     #define the shock ratio between the time between shocks and the short-term failure mode mtbf
-    upper_limmit = 100 #define value scale dado que o range não aceia floats
-    ratio_interval = [ratio for ratio in range(1,upper_limmit,int(sensitivity_step*upper_limmit))]
-    ratio_interval.append(upper_limmit) #garantue that we add the maximum allowed value for the ratio
+    ratio_interval = [ratio for ratio in range(1,ratio_limit,sensitivity_step)]
+    ratio_interval.append(ratio_limit) #garantue that we add the maximum allowed value for the ratio
 
     #Dataframe to save the results
     agregated_results = pd.DataFrame({"shocks_ratio": ratio_interval})
 
     #scale the ratio values
-    agregated_results['shocks_ratio'] = agregated_results['shocks_ratio'] / upper_limmit
+    agregated_results['shocks_ratio'] = agregated_results['shocks_ratio']
 
     #analyze the process for each maintenance policy that we have available
     for maintenance_policy in maintenance_policy_list:
@@ -99,7 +99,7 @@ def failure_modes_shock_ratio(lt_failure_mode, st_failure_mode, shock_threshold,
             print(f'{maintenance_policy} - The mtbf ratio value between the short-term and long-term failure is R={ratio}')
 
             #compute the new shock threshold based on the specified ratio
-            new_shock_threshold = st_failure_mode.failure_threshold * ratio
+            new_shock_threshold = st_failure_mode.failure_threshold / ratio
 
             #Simular a política de manutenção pretendida e guardar o melhor resultado
             cost = scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, new_shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
@@ -125,22 +125,25 @@ def failure_modes_shock_ratio(lt_failure_mode, st_failure_mode, shock_threshold,
 #maintenance_policy_list - Compute the costs according to the defined maintenance policy list (CM - corrective maintenance, PM - perfect maintenance, TBM - time based maintenance, ICBM - with perfect inspection, CBM - with perfect continuous monitoring, EICBM - with imperfect inspection, ECBM - with imperfect continuous monitoring)
 #policy_iteration_limit - Limit to where we can iteratively study the respective maintenance policy
 #policy_step - Number of times that we want to make a step (by default it takes the unit value)
+#ratio_limit - Defines the ratio maximum value that is going to be used for the study
 #sensitivity_step - The iterative step that we want when going through the interval
-def failure_modes_maintenance_costs_ratio(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy_list, policy_limit, policy_step, sensitivity_step):
+def failure_modes_maintenance_costs_ratio(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy_list, policy_limit, policy_step, ratio_limit, sensitivity_step):
 
     #define the shock ratio between the time between shocks and the short-term failure mode mtbf
-    upper_limmit = 100 #define value scale dado que o range não aceia floats
-    ratio_interval = [ratio for ratio in range(1,upper_limmit,int(sensitivity_step*upper_limmit))]
-    ratio_interval.append(upper_limmit) #garantue that we add the maximum allowed value for the ratio
+    ratio_interval = [ratio for ratio in range(1,ratio_limit,sensitivity_step)]
+    ratio_interval.append(ratio_limit) #garantue that we add the maximum allowed value for the ratio
 
     #Dataframe to save the results
     agregated_results = pd.DataFrame({"costs_ratio": ratio_interval})
 
     #scale the ratio values
-    agregated_results['costs_ratio'] = agregated_results['costs_ratio'] / upper_limmit
+    agregated_results['costs_ratio'] = agregated_results['costs_ratio']
 
     #original costs
     st_preventive_maintenance_costs, st_corrective_maintenance_costs = st_failure_mode.preventive_maintenance_costs, st_failure_mode.corrective_maintenance_costs
+
+    #Compute original ratio in order to maintain it during the sensitivity analysis
+    st_costs_ratio = st_failure_mode.corrective_maintenance_costs / st_failure_mode.preventive_maintenance_costs
 
     #analyze the process for each maintenance policy that we have available
     for maintenance_policy in maintenance_policy_list:
@@ -156,9 +159,11 @@ def failure_modes_maintenance_costs_ratio(lt_failure_mode, st_failure_mode, shoc
 
                 #compute the new costs threshold based on the specified ratio
                 if costs_type == 'preventive':
-                    st_failure_mode.preventive_maintenance_costs = lt_failure_mode.preventive_maintenance_costs * ratio
+                    st_failure_mode.preventive_maintenance_costs = lt_failure_mode.preventive_maintenance_costs / ratio
+                    st_failure_mode.corrective_maintenance_costs = st_failure_mode.preventive_maintenance_costs * st_costs_ratio
                 else:
-                    st_failure_mode.corrective_maintenance_costs = lt_failure_mode.corrective_maintenance_costs * ratio
+                    st_failure_mode.corrective_maintenance_costs = lt_failure_mode.corrective_maintenance_costs / ratio
+                    st_failure_mode.preventive_maintenance_costs = st_failure_mode.corrective_maintenance_costs / st_costs_ratio
 
                 #Simular a política de manutenção pretendida e guardar o melhor resultado
                 cost = scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
@@ -166,11 +171,9 @@ def failure_modes_maintenance_costs_ratio(lt_failure_mode, st_failure_mode, shoc
                 #save the obtained results
                 optimal_cost.append(cost)
 
-                #always reset the costs to the original value for safety
-                if costs_type == 'preventive':
-                    st_failure_mode.preventive_maintenance_costs = st_preventive_maintenance_costs
-                else:
-                    st_failure_mode.corrective_maintenance_costs = st_corrective_maintenance_costs
+                #always reset the costs to the original value at the end of the analysis
+                st_failure_mode.preventive_maintenance_costs = st_preventive_maintenance_costs
+                st_failure_mode.corrective_maintenance_costs = st_corrective_maintenance_costs
 
             #return the results in a pandas dataframe
             agregated_results[f"optimal_cost_{costs_type}_{maintenance_policy}"] = optimal_cost
@@ -190,13 +193,13 @@ def failure_modes_maintenance_costs_ratio(lt_failure_mode, st_failure_mode, shoc
 #maintenance_policy_list - Compute the costs according to the defined maintenance policy list (CM - corrective maintenance, PM - perfect maintenance, TBM - time based maintenance, ICBM - with perfect inspection, CBM - with perfect continuous monitoring, EICBM - with imperfect inspection, ECBM - with imperfect continuous monitoring)
 #policy_iteration_limit - Limit to where we can iteratively study the respective maintenance policy
 #policy_step - Number of times that we want to make a step (by default it takes the unit value)
+#ratio_limit - Defines the ratio maximum value that is going to be used for the study
 #sensitivity_step - The iterative step that we want when going through the interval
-def failure_modes_shocks_intensity(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy_list, policy_limit, policy_step, sensitivity_step):
+def failure_modes_shocks_intensity(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy_list, policy_limit, policy_step, ratio_limit, sensitivity_step):
 
     #define the mtbf ratio that we want to study
-    upper_limit = 10 #define value scale dado que o range não aceia floats
-    ratio_interval = [ratio for ratio in range(1,upper_limit,sensitivity_step)]
-    ratio_interval.append(upper_limit) #garantuee that we add the maximum allowed value for the ratio
+    ratio_interval = [ratio for ratio in range(1,ratio_limit,sensitivity_step)]
+    ratio_interval.append(ratio_limit) #garantuee that we add the maximum allowed value for the ratio
 
     #Compute the average degradation given the long-term failure mode MTBF and the failure threshold
     average_delta = lt_failure_mode.compute_mtbf('wienner')/lt_failure_mode.failure_threshold
@@ -216,10 +219,10 @@ def failure_modes_shocks_intensity(lt_failure_mode, st_failure_mode, shock_thres
             print(f'{maintenance_policy} - The ratio value between the degradation with shocks and the average degradation is R={ratio}')
 
             #Calcular o drift que precisamos dado o rácio e mantendo o resto da informação (temos que ajustar o ratio para a escala real)
-            shock_intensity_mean = ratio * average_delta - average_delta
+            new_shock_intensity_mean = ratio * average_delta - average_delta
 
             #Simular a política de manutenção pretendida e guardar o melhor resultado
-            cost = scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
+            cost = scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, new_shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
 
             #save the obtained results
             optimal_cost.append(cost)
@@ -242,16 +245,24 @@ def failure_modes_shocks_intensity(lt_failure_mode, st_failure_mode, shock_thres
 #maintenance_policy_list - Compute the costs according to the defined maintenance policy list (CM - corrective maintenance, PM - perfect maintenance, TBM - time based maintenance, ICBM - with perfect inspection, CBM - with perfect continuous monitoring, EICBM - with imperfect inspection, ECBM - with imperfect continuous monitoring)
 #policy_iteration_limit - Limit to where we can iteratively study the respective maintenance policy
 #policy_step - Number of times that we want to make a step (by default it takes the unit value)
+#ratio_limit - Defines the ratio maximum value that is going to be used for the study
 #sensitivity_step - The iterative step that we want when going through the interval
-def failure_modes_condition_costs(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy_list, policy_limit, policy_step, sensitivity_step):
+def failure_modes_condition_costs(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy_list, policy_limit, policy_step, ratio_limit, sensitivity_step):
 
     #define the mtbf ratio that we want to study
-    upper_limit = 10 #define value scale dado que o range não aceia floats
-    ratio_interval = [ratio for ratio in range(1,upper_limit,sensitivity_step)]
-    ratio_interval.append(upper_limit) #garantuee that we add the maximum allowed value for the ratio
+    ratio_interval = [ratio for ratio in range(1,ratio_limit,sensitivity_step)]
+    ratio_interval.append(ratio_limit) #garantuee that we add the maximum allowed value for the ratio
 
     #Dataframe to save the results
     agregated_results = pd.DataFrame({"condition_costs_ratio": ratio_interval})
+
+    #original costs (we assume that is installed for the long-term failure!)
+    original_monitoring_equipment_cost = lt_failure_mode.sensor_costs
+    corrective_maintenance_costs, preventive_maintenance_costs = lt_failure_mode.corrective_maintenance_costs, lt_failure_mode.preventive_maintenance_costs
+
+    #compute the original ratio
+    corrective_maintenance_monitoring_ratio = lt_failure_mode.corrective_maintenance_costs / original_monitoring_equipment_cost
+    preventive_maintenance_monitoring_ratio = lt_failure_mode.preventive_maintenance_costs / original_monitoring_equipment_cost
 
     #analyze the process for each maintenance policy that we have available
     for maintenance_policy in maintenance_policy_list:
@@ -264,15 +275,21 @@ def failure_modes_condition_costs(lt_failure_mode, st_failure_mode, shock_thresh
             #output progress
             print(f'{maintenance_policy} - The ratio value between the sensor cost and the inspection cost is R={ratio}')
 
-            #Calcular o custo do sensor com base no custo de inspeção definido
-            st_failure_mode.sensor_costs = ratio * st_failure_mode.inspection_costs
+            #Calcular o custo do sensor com base no custo de inspeção definido (we assume that is installed for the long-term failure!)
             lt_failure_mode.sensor_costs = ratio * lt_failure_mode.inspection_costs
+
+            #Adjust the maintenance costs in order to isolate the effect of the monitoring costs
+            lt_failure_mode.preventive_maintenance_costs = preventive_maintenance_costs * preventive_maintenance_monitoring_ratio
+            lt_failure_mode.corrective_maintenance_costs = corrective_maintenance_costs * corrective_maintenance_monitoring_ratio
 
             #Simular a política de manutenção pretendida e guardar o melhor resultado
             cost = scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
 
             #save the obtained results
             optimal_cost.append(cost)
+
+            #always reset the costs to the original value at the end of the analysis
+            lt_failure_mode.sensor_costs, lt_failure_mode.corrective_maintenance_costs, lt_failure_mode.preventive_maintenance_costs = original_monitoring_equipment_cost, corrective_maintenance_costs, preventive_maintenance_costs
 
         #return the results in a pandas dataframe
         agregated_results[f"optimal_cost_{maintenance_policy}"] = optimal_cost
@@ -338,9 +355,9 @@ if __name__ == '__main__':
 
     #Test function
     short_term = Failure_mode_degradation(initial_condition = 10, failure_threshold = 100, average_degradation_parameter = 2, variability_degradation_parameter = 4,
-                                          degradation = [], inspection = 15, time_maintenance_threshold = 100, condition_maintenance_threshold = 100, inspection_costs = 5, sensor_costs = 25, preventive_maintenance_costs= 100, corrective_maintenance_costs = 200) #short-term failure mode definition
+                                          degradation = [], inspection = 15, time_maintenance_threshold = 100, condition_maintenance_threshold = 100, inspection_costs = 0, sensor_costs = 0, preventive_maintenance_costs= 100, corrective_maintenance_costs = 200) #short-term failure mode definition
     long_term = Failure_mode_degradation(initial_condition = 0, failure_threshold = 200, average_degradation_parameter = 0.5, variability_degradation_parameter = 2,
-                                         degradation = [], inspection = 15, time_maintenance_threshold = 200, condition_maintenance_threshold = 200, inspection_costs = 0, sensor_costs = 0, preventive_maintenance_costs= 500, corrective_maintenance_costs = 1000) #long-term failure mode definition
+                                         degradation = [], inspection = 15, time_maintenance_threshold = 200, condition_maintenance_threshold = 200, inspection_costs = 5, sensor_costs = 25, preventive_maintenance_costs= 500, corrective_maintenance_costs = 1000) #long-term failure mode definition
     shock_threshold = 50 #threshold of activation for the shocks
     lameda_shocks = 0.5 #shocks per time step
     shock_intensity_mean = 3 #normal distribution
@@ -348,14 +365,15 @@ if __name__ == '__main__':
     simulating_periods = 10000 #simulating periods for our problem
     maintenance_policy_list = ['TBM','CBM'] #'ICBM','CBM'
     policy_limit = 200 #policy limit
-    policy_step = 5
-    sensitivity_step = 0.1
+    policy_step = 10 #policy precision for the optimal decision
+    ratio_limit = 10 #ratio maximum value that is going to be used for the study
+    sensitivity_step = 1 #ratio delta increment for the study
 
     #Run the specified analysis
     if sys.argv[1]== '1':
         print("Analyze MTBF ratio!")
         #function mtbf ratio
-        results = failure_modes_mtbf_ratio(long_term, short_term, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy_list, policy_limit, policy_step, sensitivity_step)
+        results = failure_modes_mtbf_ratio(long_term, short_term, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy_list, policy_limit, policy_step, ratio_limit, sensitivity_step)
         results.to_csv('mtbf_ratio_results.csv')
 
         #plot results
@@ -364,7 +382,7 @@ if __name__ == '__main__':
     elif sys.argv[1]== '2':
         print("Analyze shocks duration ratio!")
         #function shocks ratio
-        results = failure_modes_shock_ratio(long_term, short_term, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy_list, policy_limit, policy_step, sensitivity_step)
+        results = failure_modes_shock_ratio(long_term, short_term, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy_list, policy_limit, policy_step, ratio_limit, sensitivity_step)
         results.to_csv('shocks_ratio_results.csv')
 
         #plot results
@@ -373,7 +391,7 @@ if __name__ == '__main__':
     elif sys.argv[1]== '3':
         print("Analyze shocks intensity ratio!")
         #function shocks intensity ratio
-        results = failure_modes_shocks_intensity(long_term, short_term, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy_list, policy_limit, policy_step, sensitivity_step=1)
+        results = failure_modes_shocks_intensity(long_term, short_term, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy_list, policy_limit, policy_step, ratio_limit, sensitivity_step)
         results.to_csv('shocks_intensity_ratio_results.csv')
 
         #plot results
@@ -382,7 +400,7 @@ if __name__ == '__main__':
     elif sys.argv[1]== '4':
         print("Analyze maintenance costs ratio!")
         #function costs ratio
-        results = failure_modes_maintenance_costs_ratio(long_term, short_term, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy_list, policy_limit, policy_step, sensitivity_step)
+        results = failure_modes_maintenance_costs_ratio(long_term, short_term, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy_list, policy_limit, policy_step, ratio_limit, sensitivity_step)
         results.to_csv('maintenance_costs_ratio_results.csv')
 
         #plot results
@@ -391,7 +409,7 @@ if __name__ == '__main__':
     elif sys.argv[1]== '5':
         print("Analyze monitoring costs ratio!")
         #function monitoring costs ratio
-        results = failure_modes_condition_costs(long_term, short_term, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy_list, policy_limit, policy_step, sensitivity_step=1)
+        results = failure_modes_condition_costs(long_term, short_term, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy_list, policy_limit, policy_step, ratio_limit, sensitivity_step)
         results.to_csv('monitoring_costs_ratio_results.csv')
 
         #plot results

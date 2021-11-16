@@ -467,27 +467,3 @@ def optimal_maintenance_policy_cost(lt_failure_mode, st_failure_mode, shock_thre
     cost = round(min(total_expected_maintenance_cost_per_unit_of_time), 2)
 
     return optimal_decision, cost, results
-
-
-
-#Test functions
-inspection_period = 25
-inspection_costs = 10
-sensor_costs = 100
-short_term = Failure_mode_degradation(10, 100, 2, 4, [], inspection_period, 100, 100, inspection_costs, sensor_costs, 50, 200)
-long_term = Failure_mode_degradation(0, 200, 0.1, 2, [], inspection_period, 200, 200, inspection_costs, sensor_costs, 200, 1000)
-shock_threshold = 50
-lameda_shocks = 0.5 #shocks per time step
-shock_intensity_mean = 7 #normal distribution
-shock_intensity_stdev = 2 #normal distribution
-simulating_periods = 10000
-
-#results = simulate_maintenance_policy(long_term, short_term, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, 'TBM', 200, 5)
-
-#plot_cbm_maintenance_costs(results, 20)
-
-#results['st_tbm'] = [short_term_tbm.split("/")[1] for short_term_tbm in results['policy']]
-#results['total_costs'] = results['st_expected_maintenance_cost_per_unit_of_time'] + results['lt_expected_maintenance_cost_per_unit_of_time']
-#grouped_results = results.groupby('policy').min('total_costs')
-
-#policy_costs_plot(st_expected_maintenance_cost_per_unit_of_time, lt_expected_maintenance_cost_per_unit_of_time, 200, 1, "Time (t)", 50)
