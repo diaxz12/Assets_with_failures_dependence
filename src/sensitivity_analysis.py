@@ -384,7 +384,19 @@ def maintenance_to_condition_costs(lt_failure_mode, st_failure_mode, shock_thres
     return agregated_results
 
 #Scale the values according to the best and worst possible result
-def scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step):
+#Parameters:
+#lt_failure_mode - Long term failure mode object that is used for the degradation process
+#st_failure_mode - Short term failure mode object that is used for the degradation process
+#shock_threshold - Shock threshold
+#shock_lameda - Poisson arrival rate for the shock process
+#shock_mean - Normal distribution mean parameter
+#shock_stdev - Normal distribution standard deviation parameter
+#number_periods - Number of time periods that are used for the simulation
+#maintenance_policy_list - Compute the costs according to the defined maintenance policy list (CM - corrective maintenance, PM - perfect maintenance, TBM - time based maintenance, ICBM - with perfect inspection, CBM - with perfect continuous monitoring, EICBM - with imperfect inspection, ECBM - with imperfect continuous monitoring)
+#policy_limit - Limit to where we can iteratively study the respective maintenance policy
+#policy_step - Number of times that we want to make a step (by default it takes the unit value)
+#inspection_policy_step - The iterative step that we want when going through the interval of the inspection based maintenance
+def scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step, inspection_policy_step = 5):
 
     #Worst possible result
     _, worst_cost, _ = optimal_maintenance_policy_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, 'CM', policy_limit, policy_step)
@@ -393,7 +405,7 @@ def scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, sho
     #Scale results according to the maintenance policy
     if maintenance_policy== 'ICBM':
         cost = 9999999 #really high value
-        for inspection_time in range(1,policy_limit,policy_step):
+        for inspection_time in range(1,int(lt_failure_mode.compute_mtbf('gamma')),inspection_policy_step):
             st_failure_mode.inspection, lt_failure_mode.inspection = inspection_time, inspection_time #test different inspection times for the inspection based condition based maintenance
             #simulate the process
             _, computed_cost, _ = optimal_maintenance_policy_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)

@@ -1,4 +1,3 @@
-2--- Results computational time = 996.56 seconds for _10000sim_20polstep ---
-3--- Results computational time = 895.75 seconds for _10000sim_20polstep ---
-4--- Results computational time = 1970.3 seconds for 10000sim_20polstep ---
-5--- Results computational time = 987.16 seconds for 10000sim_20polstep ---
+5--- Results computational time = 1091.81 seconds for 10000sim_20polstep ---
+1--- Results computational time = 6791.84 seconds for 10000sim_10polstep ---
+5--- Results computational time = 5518.69 seconds for 10000sim_20polstep ---

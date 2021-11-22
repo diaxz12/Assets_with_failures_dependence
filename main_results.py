@@ -18,7 +18,7 @@ if __name__ == '__main__':
     short_term = Failure_mode_degradation(initial_condition = 10, failure_threshold = 100, average_degradation_parameter = 2, variability_degradation_parameter = 4,
                                           degradation = [], inspection = 15, time_maintenance_threshold = 100, condition_maintenance_threshold = 100, inspection_costs = 0, sensor_costs = 0, preventive_maintenance_costs= 500, corrective_maintenance_costs = 1500) #short-term failure mode definition
     long_term = Failure_mode_degradation(initial_condition = 0, failure_threshold = 200, average_degradation_parameter = 0.5, variability_degradation_parameter = 2,
-                                         degradation = [], inspection = 15, time_maintenance_threshold = 200, condition_maintenance_threshold = 200, inspection_costs = 400, sensor_costs = 2000, preventive_maintenance_costs= 10000, corrective_maintenance_costs = 20000) #long-term failure mode definition
+                                         degradation = [], inspection = 15, time_maintenance_threshold = 200, condition_maintenance_threshold = 200, inspection_costs = 100, sensor_costs = 1000, preventive_maintenance_costs= 5000, corrective_maintenance_costs = 10000) #long-term failure mode definition
     shock_threshold = 50 #threshold of activation for the shocks
     lameda_shocks = 0.5 #shocks per time step
     shock_intensity_mean = 3 #normal distribution
