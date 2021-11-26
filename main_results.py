@@ -15,29 +15,30 @@ start_time = time.time()
 if __name__ == '__main__':
 
     #Test function
-    short_term = Failure_mode_degradation(initial_condition = 10, failure_threshold = 100, average_degradation_parameter = 2, variability_degradation_parameter = 4,
+    short_term = Failure_mode_degradation(initial_condition = 0, failure_threshold = 100, average_degradation_parameter = 2, variability_degradation_parameter = 4,
                                           degradation = [], inspection = 15, time_maintenance_threshold = 100, condition_maintenance_threshold = 100, inspection_costs = 0, sensor_costs = 0,
-                                          preventive_maintenance_costs= 500, corrective_maintenance_costs = 1500, uncertainty_bias = 0, uncertainty_level = 0.1) #short-term failure mode definition
+                                          preventive_maintenance_costs= 1000, corrective_maintenance_costs = 2500, uncertainty_bias = 0, uncertainty_level = 0.05) #short-term failure mode definition
     long_term = Failure_mode_degradation(initial_condition = 0, failure_threshold = 200, average_degradation_parameter = 0.5, variability_degradation_parameter = 2,
-                                     degradation = [], inspection = 15, time_maintenance_threshold = 200, condition_maintenance_threshold = 200, inspection_costs = 100, sensor_costs = 1000,
-                                     preventive_maintenance_costs= 5000, corrective_maintenance_costs = 10000, uncertainty_bias = 0, uncertainty_level = 0.1) #long-term failure mode definition
-
+                                     degradation = [], inspection = 15, time_maintenance_threshold = 200, condition_maintenance_threshold = 200, inspection_costs = 50, sensor_costs = 250,
+                                     preventive_maintenance_costs= 5000, corrective_maintenance_costs = 10000, uncertainty_bias = 0, uncertainty_level = 0.05) #long-term failure mode definition
     shock_threshold = 50 #threshold of activation for the shocks
-    lameda_shocks = 0.5 #shocks per time step
+    lameda_shocks = int(sys.argv[1])/10 #shocks per time step
     shock_intensity_mean = 3 #normal distribution
     shock_intensity_stdev = 4 #normal distribution
-    maintenance_policy_list =  sys.argv[1] #maintenance policy to analyze
-    simulating_periods = int(sys.argv[2]) #simulating periods for our problem
+
+    maintenance_policy_list = [sys.argv[2]] #maintenance policy to analyze
+    #maintenance_policy_list = ['TBM','ECBM','CBM'] #maintenance policy to analyze
+    simulating_periods = int(sys.argv[3]) #simulating periods for our problem
     policy_limit = 200 #policy limit
-    policy_step = int(sys.argv[3]) #policy precision for the optimal decision
-    ratio_limit = 10 #ratio maximum value that is going to be used for the study
-    sensitivity_step = 2 #ratio delta increment for the study
-    results_suffix = f'{simulating_periods}sim_{policy_step}polstep' #results naming
-    sensitivity_case = sys.argv[4] #sensitivity analysis type to be performed
+    policy_step = int(sys.argv[4]) #policy precision for the optimal decision
+    ratio_limit = 25 #ratio maximum value that is going to be used for the study
+    sensitivity_step = 1 #ratio delta increment for the study
+    results_suffix = f'{simulating_periods}sim_{policy_step}polstep_{int(lameda_shocks*10)}shocks' #results naming
+    sensitivity_case = sys.argv[5] #sensitivity analysis type to be performed
 
     #check if the inputed maintenance policy is valid
-    if sys.argv[1] not in allowed_maintenance_policy_list:
-        print(f'The inputed maintenance policy {sys.argv[2]} is not valid! Choose a policy from the following list: {allowed_maintenance_policy_list}')
+    if sys.argv[2] not in allowed_maintenance_policy_list:
+        print(f'The inputed maintenance policy {sys.argv[1]} is not valid! Choose a policy from the following list: {allowed_maintenance_policy_list}')
         sys.exit()
 
     #Run the specified analysis
@@ -95,8 +96,17 @@ if __name__ == '__main__':
         #plot results
         plot_sensitivity_analysis_results(results, 'Monitoring vs maintenance costs ratio', 'Scaled expected cost')
 
+    elif sensitivity_case == '7':
+        print(f"Analyze error level for {simulating_periods} simulating periods and a maintenance policy step of {policy_step}!")
+        #function monitoring costs ratio
+        results = failure_modes_monitoring_error(long_term, short_term, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy_list, policy_limit, policy_step, ratio_limit, sensitivity_step)
+        results.to_csv(f'results/monitoring_to_maintenance_costs_ratio_results_{results_suffix}.csv')
+
+        #plot results
+        plot_sensitivity_analysis_results(results, 'Monitoring error level', 'Scaled expected cost')
+
     else:
-        print("Choose one of the following options to perform the intended sensitivity analysis {1,2,3,4,5 or 6}!")
+        print("Choose one of the following options to perform the intended sensitivity analysis {1,2,3,4,5, 6 or 7}!")
 
     #compute computational runtime
     computed_time = round((time.time() - start_time),2)

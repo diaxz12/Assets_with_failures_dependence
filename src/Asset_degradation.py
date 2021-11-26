@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from failure_mode_class import Failure_mode_degradation
 
 #Global variable
-allowed_maintenance_policy_list = ['TBM','ICBM', 'EICBM','CBM','ECBM'] #allowed maintenance policies in the program
+allowed_maintenance_policy_list = ['TBM','ICBM','CBM','ECBM'] #allowed maintenance policies in the program
 
 #Failure mode degradation that leads to the asset failure and consequent replacement using a gamma process
 #Parameters:
@@ -504,6 +504,6 @@ def optimal_maintenance_policy_cost(lt_failure_mode, st_failure_mode, shock_thre
     #Compute lifetimes for the best set of decisions
     st_optimal_lifetimes = st_lifetimes_results[total_expected_maintenance_cost_per_unit_of_time.index(min(total_expected_maintenance_cost_per_unit_of_time))]
     lt_optimal_lifetimes = lt_lifetimes_results[total_expected_maintenance_cost_per_unit_of_time.index(min(total_expected_maintenance_cost_per_unit_of_time))]
-    optimal_lifetimes = f'{st_optimal_lifetimes}/{lt_optimal_lifetimes}'
+    optimal_lifetimes = f'{lt_optimal_lifetimes}/{st_optimal_lifetimes}'
 
     return optimal_decision, cost, optimal_lifetimes, results

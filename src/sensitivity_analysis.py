@@ -31,9 +31,6 @@ def failure_modes_mtbf_ratio(lt_failure_mode, st_failure_mode, shock_threshold, 
     #Dataframe to save the results
     agregated_results = pd.DataFrame({"mtbf_ratio": ratio_interval})
 
-    #scale the ratio values
-    agregated_results['mtbf_ratio'] = agregated_results['mtbf_ratio']
-
     #analyze the process for each maintenance policy that we have available
     for maintenance_policy in maintenance_policy_list:
 
@@ -86,9 +83,6 @@ def failure_modes_shock_ratio(lt_failure_mode, st_failure_mode, shock_threshold,
     #Dataframe to save the results
     agregated_results = pd.DataFrame({"shocks_ratio": ratio_interval})
 
-    #scale the ratio values
-    agregated_results['shocks_ratio'] = agregated_results['shocks_ratio']
-
     #analyze the process for each maintenance policy that we have available
     for maintenance_policy in maintenance_policy_list:
         #define the variabless that will save the results of interest
@@ -139,9 +133,6 @@ def failure_modes_maintenance_costs_ratio(lt_failure_mode, st_failure_mode, shoc
 
     #Dataframe to save the results
     agregated_results = pd.DataFrame({"costs_ratio": ratio_interval})
-
-    #scale the ratio values
-    agregated_results['costs_ratio'] = agregated_results['costs_ratio']
 
     #original costs (we assume that is installed for the long-term failure!)
     original_monitoring_equipment_cost, original_inspection_cost = lt_failure_mode.sensor_costs, lt_failure_mode.inspection_costs
@@ -392,6 +383,61 @@ def maintenance_to_condition_costs(lt_failure_mode, st_failure_mode, shock_thres
             agregated_results[f"optimal_decision_{maintenance_policy}"] = optimal_decision
             agregated_results[f"optimal_cost_{maintenance_policy}"] = optimal_cost
             agregated_results[f"optimal_lifetime_{maintenance_policy}"] = optimal_lifetime
+
+    #final table
+    return agregated_results
+
+#Study the influence of the error variability
+#Parameters:
+#lt_failure_mode - Long term failure mode object that is used for the degradation process
+#st_failure_mode - Short term failure mode object that is used for the degradation process
+#shock_threshold - Shock threshold
+#shock_lameda - Poisson arrival rate for the shock process
+#shock_mean - Normal distribution mean parameter
+#shock_stdev - Normal distribution standard deviation parameter
+#number_periods - Number of time periods that are used for the simulation
+#maintenance_policy_list - Compute the costs according to the defined maintenance policy list (CM - corrective maintenance, PM - perfect maintenance, TBM - time based maintenance, ICBM - with perfect inspection, CBM - with perfect continuous monitoring, EICBM - with imperfect inspection, ECBM - with imperfect continuous monitoring)
+#policy_iteration_limit - Limit to where we can iteratively study the respective maintenance policy
+#policy_step - Number of times that we want to make a step (by default it takes the unit value)
+#ratio_limit - Defines the ratio maximum value that is going to be used for the study
+#sensitivity_step - The iterative step that we want when going through the interval
+def failure_modes_monitoring_error(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy_list, policy_limit, policy_step, ratio_limit, sensitivity_step):
+
+    #define the shock ratio between the time between shocks and the short-term failure mode mtbf
+    ratio_interval = [ratio for ratio in range(1,ratio_limit,sensitivity_step)]
+    ratio_interval.append(ratio_limit) #garantue that we add the maximum allowed value for the ratio
+
+    #Dataframe to save the results
+    agregated_results = pd.DataFrame({"error_variability": ratio_interval})
+
+    #scale the ratio values according to the error (we want the error in percentage)
+    agregated_results['error_variability'] = agregated_results['error_variability']/100
+
+    #analyze the process for each maintenance policy that we have available
+    for maintenance_policy in maintenance_policy_list:
+        #define the variabless that will save the results of interest
+        optimal_decision, optimal_cost, optimal_lifetime = list(), list(), list()
+
+        #analyse a given ratio value
+        for ratio in agregated_results.iloc[:, 0]:
+
+            #output progress
+            print(f'{maintenance_policy} - The error value variability is sigma={ratio}')
+
+            #compute the new shock threshold based on the specified ratio
+            lt_failure_mode.uncertainty_level, st_failure_mode.uncertainty_level = ratio, ratio
+
+            #Simular a política de manutenção pretendida e guardar o melhor resultado
+            #if (maintenance_policy in ['TBM','CBM','ICBM']) and (ratio == agregated_results.iloc[0, 0]):#for the maintenance policies ['TBM','CBM','ICBM'] we only need the first optimal value since it will be allways the same
+            decision, cost, lifetimes = scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
+
+            #save the obtained results
+            optimal_decision.append(decision), optimal_cost.append(cost), optimal_lifetime.append(lifetimes)
+
+        #return the results in a pandas dataframe
+        agregated_results[f"optimal_decision_{maintenance_policy}"] = optimal_decision
+        agregated_results[f"optimal_cost_{maintenance_policy}"] = optimal_cost
+        agregated_results[f"optimal_lifetime_{maintenance_policy}"] = optimal_lifetime
 
     #final table
     return agregated_results
