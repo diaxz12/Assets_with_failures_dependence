@@ -36,8 +36,9 @@ def failure_modes_mtbf_ratio(lt_failure_mode, st_failure_mode, shock_threshold, 
 
     #analyze the process for each maintenance policy that we have available
     for maintenance_policy in maintenance_policy_list:
+
         #define the variabless that will save the results of interest
-        optimal_cost = list()
+        optimal_decision, optimal_cost, optimal_lifetime = list(), list(), list()
 
         #analyse a given ratio value
         for ratio in agregated_results.iloc[:, 0]:
@@ -49,13 +50,15 @@ def failure_modes_mtbf_ratio(lt_failure_mode, st_failure_mode, shock_threshold, 
             st_failure_mode.average_degradation_parameter = (st_failure_mode.failure_threshold-st_failure_mode.initial_condition) * ratio / lt_mtbf
 
             #Simular a política de manutenção pretendida e guardar o melhor resultado
-            cost = scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
+            decision, cost, lifetimes = scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
 
             #save the obtained results
-            optimal_cost.append(cost)
+            optimal_decision.append(decision), optimal_cost.append(cost), optimal_lifetime.append(lifetimes)
 
         #return the results in a pandas dataframe
+        agregated_results[f"optimal_decision_{maintenance_policy}"] = optimal_decision
         agregated_results[f"optimal_cost_{maintenance_policy}"] = optimal_cost
+        agregated_results[f"optimal_lifetime_{maintenance_policy}"] = optimal_lifetime
 
     #final table
     return agregated_results
@@ -89,7 +92,7 @@ def failure_modes_shock_ratio(lt_failure_mode, st_failure_mode, shock_threshold,
     #analyze the process for each maintenance policy that we have available
     for maintenance_policy in maintenance_policy_list:
         #define the variabless that will save the results of interest
-        optimal_cost = list()
+        optimal_decision, optimal_cost, optimal_lifetime = list(), list(), list()
 
         #analyse a given ratio value
         for ratio in agregated_results.iloc[:, 0]:
@@ -101,13 +104,15 @@ def failure_modes_shock_ratio(lt_failure_mode, st_failure_mode, shock_threshold,
             new_shock_threshold = st_failure_mode.failure_threshold / ratio
 
             #Simular a política de manutenção pretendida e guardar o melhor resultado
-            cost = scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, new_shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
+            decision, cost, lifetimes = scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, new_shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
 
             #save the obtained results
-            optimal_cost.append(cost)
+            optimal_decision.append(decision), optimal_cost.append(cost), optimal_lifetime.append(lifetimes)
 
         #return the results in a pandas dataframe
+        agregated_results[f"optimal_decision_{maintenance_policy}"] = optimal_decision
         agregated_results[f"optimal_cost_{maintenance_policy}"] = optimal_cost
+        agregated_results[f"optimal_lifetime_{maintenance_policy}"] = optimal_lifetime
 
     #final table
     return agregated_results
@@ -152,7 +157,7 @@ def failure_modes_maintenance_costs_ratio(lt_failure_mode, st_failure_mode, shoc
         #analyse the costs given its type (corrective or preventive)
         for costs_type in ['preventive','corrective']:
             #define the variabless that will save the results of interest
-            optimal_cost = list()
+            optimal_decision, optimal_cost, optimal_lifetime = list(), list(), list()
             #analyse a given ratio value
             for ratio in agregated_results.iloc[:, 0]:
 
@@ -172,10 +177,10 @@ def failure_modes_maintenance_costs_ratio(lt_failure_mode, st_failure_mode, shoc
                 lt_failure_mode.sensor_costs = lt_failure_mode.corrective_maintenance_costs / equipment_monitoring_ratio
 
                 #Simular a política de manutenção pretendida e guardar o melhor resultado
-                cost = scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
+                decision, cost, lifetimes = scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
 
                 #save the obtained results
-                optimal_cost.append(cost)
+                optimal_decision.append(decision), optimal_cost.append(cost), optimal_lifetime.append(lifetimes)
 
                 #always reset the costs to the original value at the end of the analysis
                 lt_failure_mode.preventive_maintenance_costs, lt_failure_mode.corrective_maintenance_costs = lt_preventive_maintenance_costs, lt_corrective_maintenance_costs
@@ -183,7 +188,9 @@ def failure_modes_maintenance_costs_ratio(lt_failure_mode, st_failure_mode, shoc
                 lt_failure_mode.sensor_costs, lt_failure_mode.inspection_costs = original_monitoring_equipment_cost, original_inspection_cost
 
             #return the results in a pandas dataframe
-            agregated_results[f"optimal_cost_{costs_type}_{maintenance_policy}"] = optimal_cost
+            agregated_results[f"optimal_decision_{maintenance_policy}"] = optimal_decision
+            agregated_results[f"optimal_cost_{maintenance_policy}"] = optimal_cost
+            agregated_results[f"optimal_lifetime_{maintenance_policy}"] = optimal_lifetime
 
     #final table
     return agregated_results
@@ -217,7 +224,7 @@ def failure_modes_shocks_intensity(lt_failure_mode, st_failure_mode, shock_thres
     #analyze the process for each maintenance policy that we have available
     for maintenance_policy in maintenance_policy_list:
         #define the variabless that will save the results of interest
-        optimal_cost = list()
+        optimal_decision, optimal_cost, optimal_lifetime = list(), list(), list()
 
         #analyse a given ratio value
         for ratio in ratio_interval:
@@ -229,13 +236,15 @@ def failure_modes_shocks_intensity(lt_failure_mode, st_failure_mode, shock_thres
             new_shock_intensity_mean = ratio * average_delta - average_delta
 
             #Simular a política de manutenção pretendida e guardar o melhor resultado
-            cost = scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, new_shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
+            decision, cost, lifetimes = scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, new_shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
 
             #save the obtained results
-            optimal_cost.append(cost)
+            optimal_decision.append(decision), optimal_cost.append(cost), optimal_lifetime.append(lifetimes)
 
         #return the results in a pandas dataframe
+        agregated_results[f"optimal_decision_{maintenance_policy}"] = optimal_decision
         agregated_results[f"optimal_cost_{maintenance_policy}"] = optimal_cost
+        agregated_results[f"optimal_lifetime_{maintenance_policy}"] = optimal_lifetime
 
     #final table
     return agregated_results
@@ -275,7 +284,7 @@ def failure_modes_condition_costs(lt_failure_mode, st_failure_mode, shock_thresh
     #analyze the process for each maintenance policy that we have available
     for maintenance_policy in maintenance_policy_list:
         #define the variabless that will save the results of interest
-        optimal_cost = list()
+        optimal_decision, optimal_cost, optimal_lifetime = list(), list(), list()
 
         #analyse a given ratio value
         for ratio in ratio_interval:
@@ -291,10 +300,10 @@ def failure_modes_condition_costs(lt_failure_mode, st_failure_mode, shock_thresh
             #lt_failure_mode.corrective_maintenance_costs, lt_failure_mode.preventive_maintenance_costs = lt_failure_mode.sensor_costs * lt_corrective_maintenance_monitoring_ratio, lt_failure_mode.sensor_costs * lt_preventive_maintenance_monitoring_ratio
 
             #Simular a política de manutenção pretendida e guardar o melhor resultado
-            cost = scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
+            decision, cost, lifetimes = scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
 
             #save the obtained results
-            optimal_cost.append(cost)
+            optimal_decision.append(decision), optimal_cost.append(cost), optimal_lifetime.append(lifetimes)
 
             #always reset the costs to the original value at the end of the analysis
             lt_failure_mode.preventive_maintenance_costs, lt_failure_mode.corrective_maintenance_costs = lt_preventive_maintenance_costs, lt_corrective_maintenance_costs
@@ -302,7 +311,9 @@ def failure_modes_condition_costs(lt_failure_mode, st_failure_mode, shock_thresh
             lt_failure_mode.sensor_costs, lt_failure_mode.inspection_costs = original_monitoring_equipment_cost, original_inspection_cost
 
         #return the results in a pandas dataframe
+        agregated_results[f"optimal_decision_{maintenance_policy}"] = optimal_decision
         agregated_results[f"optimal_cost_{maintenance_policy}"] = optimal_cost
+        agregated_results[f"optimal_lifetime_{maintenance_policy}"] = optimal_lifetime
 
     #final table
     return agregated_results
@@ -345,7 +356,7 @@ def maintenance_to_condition_costs(lt_failure_mode, st_failure_mode, shock_thres
         #analyse the costs given its type (corrective or preventive)
         for costs_type in ['preventive','corrective']:
             #define the variabless that will save the results of interest
-            optimal_cost = list()
+            optimal_decision, optimal_cost, optimal_lifetime = list(), list(), list()
             #analyse a given ratio value
             for ratio in agregated_results.iloc[:, 0]:
 
@@ -367,10 +378,10 @@ def maintenance_to_condition_costs(lt_failure_mode, st_failure_mode, shock_thres
                 #st_failure_mode.corrective_maintenance_costs, st_failure_mode.preventive_maintenance_costs = lt_failure_mode.sensor_costs * st_corrective_maintenance_monitoring_ratio, lt_failure_mode.sensor_costs * st_preventive_maintenance_monitoring_ratio
 
                 #Simular a política de manutenção pretendida e guardar o melhor resultado
-                cost = scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
+                decision, cost, lifetimes = scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
 
                 #save the obtained results
-                optimal_cost.append(cost)
+                optimal_decision.append(decision), optimal_cost.append(cost), optimal_lifetime.append(lifetimes)
 
                 #always reset the costs to the original value at the end of the analysis
                 lt_failure_mode.preventive_maintenance_costs, lt_failure_mode.corrective_maintenance_costs = lt_preventive_maintenance_costs, lt_corrective_maintenance_costs
@@ -378,7 +389,9 @@ def maintenance_to_condition_costs(lt_failure_mode, st_failure_mode, shock_thres
                 lt_failure_mode.sensor_costs, lt_failure_mode.inspection_costs = original_monitoring_equipment_cost, original_inspection_cost
 
             #return the results in a pandas dataframe
-            agregated_results[f"optimal_cost_{costs_type}_{maintenance_policy}"] = optimal_cost
+            agregated_results[f"optimal_decision_{maintenance_policy}"] = optimal_decision
+            agregated_results[f"optimal_cost_{maintenance_policy}"] = optimal_cost
+            agregated_results[f"optimal_lifetime_{maintenance_policy}"] = optimal_lifetime
 
     #final table
     return agregated_results
@@ -399,28 +412,25 @@ def maintenance_to_condition_costs(lt_failure_mode, st_failure_mode, shock_thres
 def scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step, inspection_policy_step = 5):
 
     #Worst possible result
-    _, worst_cost, _ = optimal_maintenance_policy_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, 'CM', policy_limit, policy_step)
-    #_, best_cost, _ = optimal_maintenance_policy_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, 'PM', policy_limit, policy_step)
+    _, worst_cost, _, _ = optimal_maintenance_policy_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, 'CM', policy_limit, policy_step)
 
     #Scale results according to the maintenance policy
     if maintenance_policy== 'ICBM':
-        cost = 9999999 #really high value
+        cost = 99999 #really high value
         for inspection_time in range(1,int(lt_failure_mode.compute_mtbf('gamma')),inspection_policy_step):
             st_failure_mode.inspection, lt_failure_mode.inspection = inspection_time, inspection_time #test different inspection times for the inspection based condition based maintenance
             #simulate the process
-            _, computed_cost, _ = optimal_maintenance_policy_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
+            computed_optimal_decision, computed_cost, computed_optimal_lifetimes, _ = optimal_maintenance_policy_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
             #check if we update the results
             if computed_cost < cost:
                 cost = computed_cost #new best cost
+                optimal_decision = computed_optimal_decision #new best decision
+                optimal_lifetimes = computed_optimal_lifetimes #new best lifetime
     #in case we use another maintenance policy
     else:
-        _, cost, _ = optimal_maintenance_policy_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
+        optimal_decision, cost, optimal_lifetimes, _ = optimal_maintenance_policy_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
 
-    #min max scaling
-    #if cost < best_cost:#just to check if everything is working according to the expected theory
-    #    print(f'Cost={cost} and bescost={best_cost} and worstcost={worst_cost}')
-    #return (cost-best_cost)/(worst_cost-best_cost)
-    return cost / worst_cost
+    return optimal_decision, cost/worst_cost, optimal_lifetimes
 
 #Plot the results according to the paper format
 #Parameters:
@@ -432,8 +442,11 @@ def plot_sensitivity_analysis_results(sensitivity_results, x_axis_name, y_axis_n
     ##build inspection policy
     fig, ax = plt.subplots(figsize=(20, 10))
 
+    #get feature of interest to study (alterar esta parte para mais geral!!!!!)
+    columns_of_interest = [col for col in sensitivity_results.iloc[:, 1:].columns if 'optimal_cost' in col]
+
     #plot the results for the required maintenance policies
-    for col in sensitivity_results.iloc[:, 1:].columns:
+    for col in columns_of_interest:
         ax.plot(sensitivity_results[sensitivity_results.columns[0]], sensitivity_results[col], label = col)
 
     #Plot labeling

@@ -17,7 +17,10 @@ class Failure_mode_degradation:
     #inspection_costs - inspection costs given the condition assessment
     #preventive_maintenance_costs - planned maintenance intervention costs
     #corrective_maintenance_costs - corrective maintenance intervention costs
-    def __init__(self, initial_condition, failure_threshold, average_degradation_parameter, variability_degradation_parameter, degradation, inspection, time_maintenance_threshold,condition_maintenance_threshold, inspection_costs, sensor_costs, preventive_maintenance_costs, corrective_maintenance_costs):
+    #uncertainty_bias - mean of the normal distribution
+    #uncertainty_level - standard_deviation of the normal distribution
+    def __init__(self, initial_condition, failure_threshold, average_degradation_parameter, variability_degradation_parameter, degradation, inspection, time_maintenance_threshold,
+                 condition_maintenance_threshold, inspection_costs, sensor_costs, preventive_maintenance_costs, corrective_maintenance_costs, uncertainty_bias, uncertainty_level):
 
         self.initial_condition = initial_condition
         self.failure_threshold = failure_threshold
@@ -31,6 +34,8 @@ class Failure_mode_degradation:
         self.sensor_costs = sensor_costs
         self.preventive_maintenance_costs = preventive_maintenance_costs
         self.corrective_maintenance_costs = corrective_maintenance_costs
+        self.uncertainty_bias = uncertainty_bias
+        self.uncertainty_level = uncertainty_level
 
     #Function to clear the simulated degradation
     def clear_degradation(self):
