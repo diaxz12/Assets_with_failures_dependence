@@ -277,7 +277,7 @@ def maintenance_costs(failure_mode, maintenance_policy):
 #initial_condition - Failure mode initial condition
 def expected_lifetime(failure_mode_degradation, initial_condition):
 
-    return np.mean(np.diff(get_restart_condition_time(failure_mode_degradation, initial_condition)))
+    return np.round(np.mean(np.diff(get_restart_condition_time(failure_mode_degradation, initial_condition))),2)
 
 #Function to record the failure time for a given simulated degradation
 #Parameters:

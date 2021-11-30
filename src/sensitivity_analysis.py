@@ -291,7 +291,8 @@ def failure_modes_condition_costs(lt_failure_mode, st_failure_mode, shock_thresh
             #lt_failure_mode.corrective_maintenance_costs, lt_failure_mode.preventive_maintenance_costs = lt_failure_mode.sensor_costs * lt_corrective_maintenance_monitoring_ratio, lt_failure_mode.sensor_costs * lt_preventive_maintenance_monitoring_ratio
 
             #Simular a política de manutenção pretendida e guardar o melhor resultado
-            decision, cost, lifetimes = scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
+            if check_sensitivity_influence(maintenance_policy, ['TBM', 'ICBM'], optimal_decision) == True:
+                decision, cost, lifetimes = scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
 
             #save the obtained results
             optimal_decision.append(decision), optimal_cost.append(cost), optimal_lifetime.append(lifetimes)
@@ -369,7 +370,8 @@ def maintenance_to_condition_costs(lt_failure_mode, st_failure_mode, shock_thres
                 #st_failure_mode.corrective_maintenance_costs, st_failure_mode.preventive_maintenance_costs = lt_failure_mode.sensor_costs * st_corrective_maintenance_monitoring_ratio, lt_failure_mode.sensor_costs * st_preventive_maintenance_monitoring_ratio
 
                 #Simular a política de manutenção pretendida e guardar o melhor resultado
-                decision, cost, lifetimes = scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
+                if check_sensitivity_influence(maintenance_policy, ['TBM'], optimal_decision) == True:
+                    decision, cost, lifetimes = scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
 
                 #save the obtained results
                 optimal_decision.append(decision), optimal_cost.append(cost), optimal_lifetime.append(lifetimes)
@@ -428,8 +430,8 @@ def failure_modes_monitoring_error(lt_failure_mode, st_failure_mode, shock_thres
             lt_failure_mode.uncertainty_level, st_failure_mode.uncertainty_level = ratio, ratio
 
             #Simular a política de manutenção pretendida e guardar o melhor resultado
-            #if (maintenance_policy in ['TBM','CBM','ICBM']) and (ratio == agregated_results.iloc[0, 0]):#for the maintenance policies ['TBM','CBM','ICBM'] we only need the first optimal value since it will be allways the same
-            decision, cost, lifetimes = scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
+            if check_sensitivity_influence(maintenance_policy, ['TBM','CBM','ICBM'], optimal_decision) == True:
+                decision, cost, lifetimes = scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
 
             #save the obtained results
             optimal_decision.append(decision), optimal_cost.append(cost), optimal_lifetime.append(lifetimes)
@@ -441,6 +443,11 @@ def failure_modes_monitoring_error(lt_failure_mode, st_failure_mode, shock_thres
 
     #final table
     return agregated_results
+
+#Verify if we neeed to compute a new value for the maintenance policy given the parameters variation
+def check_sensitivity_influence(maintenance_policy, check_maintenance_policy_list, optimal_decision_list):
+
+    return False if (maintenance_policy in check_maintenance_policy_list) and (len(optimal_decision_list) > 0) else True
 
 #Scale the values according to the best and worst possible result
 #Parameters:
@@ -476,7 +483,7 @@ def scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, sho
     else:
         optimal_decision, cost, optimal_lifetimes, _ = optimal_maintenance_policy_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step)
 
-    return optimal_decision, cost/worst_cost, optimal_lifetimes
+    return optimal_decision, round(cost/worst_cost,2), optimal_lifetimes
 
 #Plot the results according to the paper format
 #Parameters:

@@ -26,8 +26,8 @@ if __name__ == '__main__':
     shock_intensity_mean = 3 #normal distribution
     shock_intensity_stdev = 4 #normal distribution
 
-    maintenance_policy_list = [sys.argv[2]] #maintenance policy to analyze
-    #maintenance_policy_list = ['TBM','ECBM','CBM'] #maintenance policy to analyze
+    #maintenance_policy_list = [sys.argv[2]] #maintenance policy to analyze
+    maintenance_policy_list = ['TBM','CBM','ECBM'] #maintenance policy to analyze ICBM
     simulating_periods = int(sys.argv[3]) #simulating periods for our problem
     policy_limit = 200 #policy limit
     policy_step = int(sys.argv[4]) #policy precision for the optimal decision
