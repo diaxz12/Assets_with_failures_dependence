@@ -464,6 +464,10 @@ def check_sensitivity_influence(maintenance_policy, check_maintenance_policy_lis
 #inspection_policy_step - The iterative step that we want when going through the interval of the inspection based maintenance
 def scaled_maintenance_policy_optimal_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, maintenance_policy, policy_limit, policy_step, inspection_policy_step = 5):
 
+    #Temporary code
+    if maintenance_policy == 'TBM':
+        policy_step = int(policy_step / 10) #The TBM will be a factor of 10 compared to other maintenance policies optimization step
+
     #Worst possible result
     _, worst_cost, _, _ = optimal_maintenance_policy_cost(lt_failure_mode, st_failure_mode, shock_threshold, lameda_shocks, shock_intensity_mean, shock_intensity_stdev, simulating_periods, 'CM', policy_limit, policy_step)
 

@@ -187,20 +187,23 @@ def simulate_degradation_with_maintenance(lt_failure_mode, st_failure_mode, shoc
 def degradation_plot(st_degradation, st_failure_threshold, shock_threshold, lt_degradation, lt_failure_threshold):
 
     #build degradation plot
-    fig, ax = plt.subplots(figsize=(20, 10))
-    ax.plot(np.array(range(len(st_degradation))), np.array(st_degradation), label="short term failure mode")
-    ax.plot(np.array(range(len(lt_degradation))), np.array(lt_degradation), label="long term failure mode")
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.plot(np.array(range(len(lt_degradation))), np.array(lt_degradation), label="Component 1")
+    ax.plot(np.array(range(len(st_degradation))), np.array(st_degradation), label="Component 2")
 
     #add failure thresholds
-    ax.plot(np.array(range(len(st_degradation))), [st_failure_threshold] * len(st_degradation), label="short term failure threshold")
-    ax.plot(np.array(range(len(st_degradation))), [shock_threshold] * len(st_degradation), label="shock threshold")
-    ax.plot(np.array(range(len(lt_degradation))), [lt_failure_threshold] * len(lt_degradation), label="long term failure threshold")
+    ax.plot(np.array(range(len(st_degradation))), [shock_threshold] * len(st_degradation), label="Shock threshold")
+    ax.plot(np.array(range(len(lt_degradation))), [lt_failure_threshold] * len(lt_degradation), label="Component 1 failure threshold")
+    ax.plot(np.array(range(len(st_degradation))), [st_failure_threshold] * len(st_degradation), label="Component 2 failure threshold")
 
     #Plot labeling
-    ax.set(xlabel='Time (days)', ylabel='Degradation', title='Degradation sample')
+    ax.set(xlabel='Time (t)', ylabel='Component degradation')
+    plt.legend(loc='upper left')
+
+    #Save plot
+    plt.savefig('sample_degradation.png', dpi=300)
 
     #Show results
-    plt.legend(loc='upper left')
     plt.show()
 
 #Function to plot the expected unitary cost process
@@ -252,8 +255,7 @@ def classify_maintenance_intervetion(degradation, failure_threshold):
 #Function to compute costs the maintenance costs
 #Parameters:
 #failure_mode - Failure mode object that is used for the degradation process
-#maintenance_policy - Compute the costs according to the defined maintenance policy (CM - corrective maintenance, PM - perfect maintenance, TBM - time based maintenance, ICBM - with perfect inspection, CBM - with perfect continuous monitoring, EICBM - with imperfect inspection, ECBM - with imperfect continuous monitoring)
-def maintenance_costs(failure_mode, maintenance_policy):
+def maintenance_costs(failure_mode):
 
     #Get the maintenance interventions
     failure_mode_maintenance = maintenance_interventions(failure_mode.degradation, failure_mode.initial_condition, failure_mode.failure_threshold)
@@ -270,6 +272,34 @@ def maintenance_costs(failure_mode, maintenance_policy):
         total_maintenance_costs += (failure_mode_maintenance.count('P') * failure_mode.preventive_maintenance_costs) / (len(failure_mode_maintenance)+1) #in the case of having a zero
 
     return round(total_maintenance_costs, 2)
+
+#Function to compute costs the maintenance costs
+#Parameters:
+#st_failure_mode - Short-term failure mode object that is used for the degradation process
+#lt_failure_mode - Long-term failure mode object that is used for the degradation process
+def system_maintenance_costs(st_failure_mode, lt_failure_mode):
+
+    #Get the maintenance interventions for each failure mode
+    st_failure_mode_maintenance = maintenance_interventions(st_failure_mode.degradation, st_failure_mode.initial_condition, st_failure_mode.failure_threshold)
+    lt_failure_mode_maintenance = maintenance_interventions(lt_failure_mode.degradation, lt_failure_mode.initial_condition, lt_failure_mode.failure_threshold)
+
+    #variable for the total cost (starts with 0)
+    total_maintenance_costs = 0
+
+    #Compute costs for the corrective maintenance costs
+    if st_failure_mode_maintenance.count('C') > 0:
+        total_maintenance_costs += st_failure_mode_maintenance.count('C') * st_failure_mode.corrective_maintenance_costs
+    if lt_failure_mode_maintenance.count('C') > 0:
+        total_maintenance_costs += lt_failure_mode_maintenance.count('C') * lt_failure_mode.corrective_maintenance_costs
+
+    #Compute costs for the preventive maintenance costs
+    if st_failure_mode_maintenance.count('P') > 0:
+        total_maintenance_costs += st_failure_mode_maintenance.count('P') * st_failure_mode.preventive_maintenance_costs
+    if lt_failure_mode_maintenance.count('P') > 0:
+        total_maintenance_costs += lt_failure_mode_maintenance.count('P') * lt_failure_mode.preventive_maintenance_costs
+
+    #Calculate the expected cost
+    return round(total_maintenance_costs / len(lt_failure_mode_maintenance), 2)
 
 #Function to compute the expected lifetime of a failure mode given the simulated degradation
 #Parameters:
@@ -315,7 +345,8 @@ def simulate_maintenance_policy(lt_failure_mode, st_failure_mode, shock_threshol
     lt_expected_maintenance_cost_per_unit_of_time = list() #unitary cost of the long-term failure mode
     st_expected_lifetime = list() #expected lifetime of the short-term failure mode given a set of values for the maintenance strategy
     lt_expected_lifetime = list() #expected lifetime of the long-term failure mode given a set of values for the maintenance strategy
-    results_index = list()
+    cost_rate = list() #system cost rate given the defined decision variables
+    results_index = list() #decision variables results
 
     #Compute costs for the corrective maintenance costs
     if maintenance_policy == 'CM':
@@ -324,8 +355,9 @@ def simulate_maintenance_policy(lt_failure_mode, st_failure_mode, shock_threshol
         st_failure_mode, lt_failure_mode = simulate_degradation(lt_failure_mode, st_failure_mode, shock_threshold, shock_lameda, shock_mean, shock_stdev, number_periods)
 
         #Compute the expected unitary cost for each failure mode
-        st_expected_maintenance_cost_per_unit_of_time.append(maintenance_costs(st_failure_mode, maintenance_policy) / expected_lifetime(st_failure_mode.degradation, st_failure_mode.initial_condition))
-        lt_expected_maintenance_cost_per_unit_of_time.append(maintenance_costs(lt_failure_mode, maintenance_policy) / expected_lifetime(lt_failure_mode.degradation, lt_failure_mode.initial_condition))
+        st_expected_maintenance_cost_per_unit_of_time.append(maintenance_costs(st_failure_mode) / expected_lifetime(st_failure_mode.degradation, st_failure_mode.initial_condition))
+        lt_expected_maintenance_cost_per_unit_of_time.append(maintenance_costs(lt_failure_mode) / expected_lifetime(lt_failure_mode.degradation, lt_failure_mode.initial_condition))
+        cost_rate.append(system_maintenance_costs(st_failure_mode, lt_failure_mode) / expected_lifetime(lt_failure_mode.degradation, lt_failure_mode.initial_condition))
 
         #Update results index
         results_index.append('None')
@@ -343,8 +375,9 @@ def simulate_maintenance_policy(lt_failure_mode, st_failure_mode, shock_threshol
         st_failure_mode, lt_failure_mode = simulate_degradation(lt_failure_mode, st_failure_mode, shock_threshold, shock_lameda, shock_mean, shock_stdev, number_periods)
 
         #Compute the expected unitary cost for each failure mode
-        st_expected_maintenance_cost_per_unit_of_time.append(maintenance_costs(st_failure_mode, maintenance_policy) / expected_lifetime(st_failure_mode.degradation, st_failure_mode.initial_condition))
-        lt_expected_maintenance_cost_per_unit_of_time.append(maintenance_costs(lt_failure_mode, maintenance_policy) / expected_lifetime(lt_failure_mode.degradation, lt_failure_mode.initial_condition))
+        st_expected_maintenance_cost_per_unit_of_time.append(maintenance_costs(st_failure_mode) / expected_lifetime(st_failure_mode.degradation, st_failure_mode.initial_condition))
+        lt_expected_maintenance_cost_per_unit_of_time.append(maintenance_costs(lt_failure_mode) / expected_lifetime(lt_failure_mode.degradation, lt_failure_mode.initial_condition))
+        cost_rate.append(system_maintenance_costs(st_failure_mode, lt_failure_mode) / expected_lifetime(lt_failure_mode.degradation, lt_failure_mode.initial_condition))
 
         #change maintenance costs to the original values
         st_failure_mode.corrective_maintenance_costs, lt_failure_mode.corrective_maintenance_costs = st_corrective_maintenance_costs, lt_corrective_maintenance_costs
@@ -369,6 +402,8 @@ def simulate_maintenance_policy(lt_failure_mode, st_failure_mode, shock_threshol
         #Compute the expected unitary cost per failure mode according to the renewal theory
         st_expected_maintenance_cost_per_unit_of_time = [(1-reliability)*st_failure_mode.corrective_maintenance_costs/lifetime + reliability*st_failure_mode.preventive_maintenance_costs/lifetime for reliability,lifetime in zip(st_reliability_function, st_expected_lifetime_tbm)]
         lt_expected_maintenance_cost_per_unit_of_time = [(1-reliability)*lt_failure_mode.corrective_maintenance_costs/lifetime + reliability*lt_failure_mode.preventive_maintenance_costs/lifetime for reliability,lifetime in zip(lt_reliability_function, lt_expected_lifetime_tbm)]
+        for i,j in zip(st_expected_maintenance_cost_per_unit_of_time, lt_expected_maintenance_cost_per_unit_of_time): #get the system cost rate
+            cost_rate.append(i+j)
 
         #Update results index
         for time in range(1, len(st_expected_maintenance_cost_per_unit_of_time)+1):
@@ -383,8 +418,8 @@ def simulate_maintenance_policy(lt_failure_mode, st_failure_mode, shock_threshol
         st_failure_mode, lt_failure_mode = simulate_degradation(lt_failure_mode, st_failure_mode, shock_threshold, shock_lameda, shock_mean, shock_stdev, number_periods)
 
         #Calculate range upper bounds
-        st_lifetime_without_maintenance = int(expected_lifetime(st_failure_mode.degradation, st_failure_mode.initial_condition))
-        lt_lifetime_without_maintenance = int(expected_lifetime(lt_failure_mode.degradation, lt_failure_mode.initial_condition))
+        st_lifetime_without_maintenance = int(st_failure_mode.compute_mtbf('wienner'))
+        lt_lifetime_without_maintenance = int(lt_failure_mode.compute_mtbf('gamma'))
 
         #Reset the degradation to start simulating the TBM
         st_failure_mode.clear_degradation(), lt_failure_mode.clear_degradation()
@@ -399,8 +434,9 @@ def simulate_maintenance_policy(lt_failure_mode, st_failure_mode, shock_threshol
 
                 #Compute the expected unitary cost for each failure mode
                 results_index.append(f'{lt_tbm}/{st_tbm}')
-                st_expected_maintenance_cost_per_unit_of_time.append(maintenance_costs(st_failure_mode, maintenance_policy) / expected_lifetime(st_failure_mode.degradation, st_failure_mode.initial_condition))
-                lt_expected_maintenance_cost_per_unit_of_time.append(maintenance_costs(lt_failure_mode, maintenance_policy) / expected_lifetime(lt_failure_mode.degradation, lt_failure_mode.initial_condition))
+                st_expected_maintenance_cost_per_unit_of_time.append(maintenance_costs(st_failure_mode) / expected_lifetime(st_failure_mode.degradation, st_failure_mode.initial_condition))
+                lt_expected_maintenance_cost_per_unit_of_time.append(maintenance_costs(lt_failure_mode) / expected_lifetime(lt_failure_mode.degradation, lt_failure_mode.initial_condition))
+                cost_rate.append(system_maintenance_costs(st_failure_mode, lt_failure_mode) / expected_lifetime(lt_failure_mode.degradation, lt_failure_mode.initial_condition))
                 st_expected_lifetime.append(expected_lifetime(st_failure_mode.degradation, st_failure_mode.initial_condition))
                 lt_expected_lifetime.append(expected_lifetime(lt_failure_mode.degradation, lt_failure_mode.initial_condition))
 
@@ -417,8 +453,9 @@ def simulate_maintenance_policy(lt_failure_mode, st_failure_mode, shock_threshol
 
                 #Compute the expected unitary cost for each failure mode
                 results_index.append(f'{lt_cbm}/{st_cbm}')
-                st_expected_maintenance_cost_per_unit_of_time.append((maintenance_costs(st_failure_mode, maintenance_policy) + st_failure_mode.sensor_costs) / expected_lifetime(st_failure_mode.degradation, st_failure_mode.initial_condition))
-                lt_expected_maintenance_cost_per_unit_of_time.append((maintenance_costs(lt_failure_mode, maintenance_policy) + lt_failure_mode.sensor_costs) / expected_lifetime(lt_failure_mode.degradation, lt_failure_mode.initial_condition))
+                st_expected_maintenance_cost_per_unit_of_time.append((maintenance_costs(st_failure_mode) + st_failure_mode.sensor_costs) / expected_lifetime(st_failure_mode.degradation, st_failure_mode.initial_condition))
+                lt_expected_maintenance_cost_per_unit_of_time.append((maintenance_costs(lt_failure_mode) + lt_failure_mode.sensor_costs) / expected_lifetime(lt_failure_mode.degradation, lt_failure_mode.initial_condition))
+                cost_rate.append((system_maintenance_costs(st_failure_mode, lt_failure_mode) + st_failure_mode.sensor_costs + lt_failure_mode.sensor_costs) / expected_lifetime(lt_failure_mode.degradation, lt_failure_mode.initial_condition))
                 st_expected_lifetime.append(expected_lifetime(st_failure_mode.degradation, st_failure_mode.initial_condition))
                 lt_expected_lifetime.append(expected_lifetime(lt_failure_mode.degradation, lt_failure_mode.initial_condition))
 
@@ -435,14 +472,16 @@ def simulate_maintenance_policy(lt_failure_mode, st_failure_mode, shock_threshol
 
                 #Compute the expected unitary cost for each failure mode
                 results_index.append(f'{lt_cbm}/{st_cbm}')
-                st_expected_maintenance_cost_per_unit_of_time.append((maintenance_costs(st_failure_mode, maintenance_policy)+np.mean(st_inspections)*st_failure_mode.inspection_costs) / expected_lifetime(st_failure_mode.degradation, st_failure_mode.initial_condition))
-                lt_expected_maintenance_cost_per_unit_of_time.append((maintenance_costs(lt_failure_mode, maintenance_policy)+np.mean(lt_inspections)*lt_failure_mode.inspection_costs) / expected_lifetime(lt_failure_mode.degradation, lt_failure_mode.initial_condition))
+                st_expected_maintenance_cost_per_unit_of_time.append((maintenance_costs(st_failure_mode)+np.mean(st_inspections)*st_failure_mode.inspection_costs) / expected_lifetime(st_failure_mode.degradation, st_failure_mode.initial_condition))
+                lt_expected_maintenance_cost_per_unit_of_time.append((maintenance_costs(lt_failure_mode)+np.mean(lt_inspections)*lt_failure_mode.inspection_costs) / expected_lifetime(lt_failure_mode.degradation, lt_failure_mode.initial_condition))
+                cost_rate.append((system_maintenance_costs(st_failure_mode, lt_failure_mode) + np.mean(st_inspections)*st_failure_mode.inspection_costs + np.mean(lt_inspections)*lt_failure_mode.inspection_costs) / expected_lifetime(lt_failure_mode.degradation, lt_failure_mode.initial_condition))
                 st_expected_lifetime.append(expected_lifetime(st_failure_mode.degradation, st_failure_mode.initial_condition))
                 lt_expected_lifetime.append(expected_lifetime(lt_failure_mode.degradation, lt_failure_mode.initial_condition))
 
     #Return the expected unitary cost for the studied failure modes
     final_results = pd.DataFrame({"policy": results_index, "st_expected_maintenance_cost_per_unit_of_time": st_expected_maintenance_cost_per_unit_of_time,
-                                  "lt_expected_maintenance_cost_per_unit_of_time": lt_expected_maintenance_cost_per_unit_of_time, "st_expected_lifetime": st_expected_lifetime, "lt_expected_lifetime": lt_expected_lifetime})
+                                  "lt_expected_maintenance_cost_per_unit_of_time": lt_expected_maintenance_cost_per_unit_of_time, "total_expected_unitary_cost": cost_rate,
+                                  "st_expected_lifetime": st_expected_lifetime, "lt_expected_lifetime": lt_expected_lifetime})
 
     return final_results
 
@@ -491,7 +530,7 @@ def optimal_maintenance_policy_cost(lt_failure_mode, st_failure_mode, shock_thre
     results = simulate_maintenance_policy(lt_failure_mode, st_failure_mode, shock_threshold, shock_lameda, shock_mean, shock_stdev, number_periods, maintenance_policy, policy_iteration_limit, policy_step)
 
     #Convert the results to a specific format
-    results['total_expected_unitary_cost'] = results['st_expected_maintenance_cost_per_unit_of_time'] + results['lt_expected_maintenance_cost_per_unit_of_time']
+    #results['total_expected_unitary_cost'] = results['st_expected_maintenance_cost_per_unit_of_time'] + results['lt_expected_maintenance_cost_per_unit_of_time']
     condition_policy, total_expected_maintenance_cost_per_unit_of_time = list(results['policy']), list(results['total_expected_unitary_cost'])
     st_lifetimes_results, lt_lifetimes_results = list(results['st_expected_lifetime']), list(results['lt_expected_lifetime'])
 
@@ -507,3 +546,4 @@ def optimal_maintenance_policy_cost(lt_failure_mode, st_failure_mode, shock_thre
     optimal_lifetimes = f'{lt_optimal_lifetimes}/{st_optimal_lifetimes}'
 
     return optimal_decision, cost, optimal_lifetimes, results
+
